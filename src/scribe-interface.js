@@ -9,16 +9,16 @@ var scribePluginLinkPromptCommand = require('scribe-plugin-link-prompt-command')
 var scribePluginSanitizer = require('scribe-plugin-sanitizer');
 
 var sanitizeDefaults = {
-  p: true,
+  p: {},
   a: {
     href: true,
     target: '_blank',
     rel: true
   },
-  i: true,
-  b: true,
-  strong: true,
-  em: true
+  i: {},
+  b: {},
+  strong: {},
+  em: {}
 };
 
 module.exports = {
