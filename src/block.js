@@ -338,7 +338,7 @@ Object.assign(Block.prototype, SimpleBlock.fn, require('./block-validations'), {
 
         if(ev.which === cmd.keyCode && ctrlDown) {
           ev.preventDefault();
-          block.execTextBlockCommand(cmd);
+          block.execTextBlockCommand(cmd.cmd);
         }
       });
     });
