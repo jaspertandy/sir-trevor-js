@@ -128,8 +128,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  BlockStore: __webpack_require__(244),
 	  BlockManager: __webpack_require__(245),
 
-	  SimpleBlock: __webpack_require__(249),
-	  Block: __webpack_require__(248),
+	  SimpleBlock: __webpack_require__(252),
+	  Block: __webpack_require__(251),
 
 	  Blocks: __webpack_require__(246),
 
@@ -137,7 +137,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Editor: __webpack_require__(275),
 
 	  toMarkdown: __webpack_require__(283),
-	  toHTML: __webpack_require__(257),
+	  toHTML: __webpack_require__(260),
 
 	  setDefaults: function setDefaults(options) {
 	    _Object$assign(SirTrevor.config.defaults, options || {});
@@ -2304,6 +2304,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	(function () {
 	  'use strict';
+
+	  // The IE's "contains" method does not work when a text node is passed as argument.
+	  if (/Trident/.test(navigator.userAgent)) {
+	    Object.defineProperty(HTMLElement.prototype, 'contains', {
+	      writable: true,
+	      enumerable: false,
+	      configurable: true,
+	      value: function value(node) {
+	        if (!node) return false;
+	        return this === node || !!(this.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_CONTAINED_BY);
+	      }
+	    });
+	  }
 
 	  // IE does not implement `Document.prototype.contains`
 	  if (typeof Document.prototype.contains !== 'function') {
@@ -18956,10 +18969,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Text Block
 	*/
 
-	var Block = __webpack_require__(248);
-	var stToHTML = __webpack_require__(257);
+	var _Array$from = __webpack_require__(248)['default'];
 
-	var ScribeTextBlockPlugin = __webpack_require__(258);
+	var Block = __webpack_require__(251);
+	var stToHTML = __webpack_require__(260);
+
+	var ScribeTextBlockPlugin = __webpack_require__(261);
 	var ScribePastePlugin = __webpack_require__(262);
 	var ScribeHeadingPlugin = __webpack_require__(263);
 	var ScribeQuotePlugin = __webpack_require__(264);
@@ -18991,7 +19006,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  scribeOptions: {
 	    allowBlockElements: true,
 	    tags: {
-	      p: true
+	      p: {}
 	    }
 	  },
 
@@ -19004,8 +19019,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 
 	  onBlockRender: function onBlockRender() {
+	    var _this = this;
+
 	    this.focus();
 	    this.toggleEmptyClass();
+
+	    if (Object.hasOwnProperty.call(window, "ActiveXObject") && !window.ActiveXObject) {
+	      this._scribe.el.addEventListener('paste', function () {
+	        setTimeout(function () {
+
+	          var fakeContent = document.createElement('div');
+	          fakeContent.innerHTML = _this._scribe.getContent();
+
+	          if (fakeContent.childNodes.length > 1) {
+
+	            var nodes = _Array$from(fakeContent.childNodes);
+	            _this._scribe.setContent(nodes.shift().innerHTML);
+	            nodes.reverse().forEach(function (node) {
+	              var data = {
+	                format: 'html',
+	                text: node.innerHTML
+	              };
+	              _this.mediator.trigger("block:create", 'Text', data, _this.el);
+	            });
+	            _this._scribe.el.focus();
+	          }
+	        }, 1);
+	      });
+	    }
 	  },
 
 	  toggleEmptyClass: function toggleEmptyClass() {
@@ -19019,6 +19060,62 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 248 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = { "default": __webpack_require__(249), __esModule: true };
+
+/***/ },
+/* 249 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(90);
+	__webpack_require__(250);
+	module.exports = __webpack_require__(7).Array.from;
+
+/***/ },
+/* 250 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var ctx         = __webpack_require__(8)
+	  , $export     = __webpack_require__(5)
+	  , toObject    = __webpack_require__(12)
+	  , call        = __webpack_require__(117)
+	  , isArrayIter = __webpack_require__(118)
+	  , toLength    = __webpack_require__(119)
+	  , getIterFn   = __webpack_require__(120);
+	$export($export.S + $export.F * !__webpack_require__(131)(function(iter){ Array.from(iter); }), 'Array', {
+	  // 22.1.2.1 Array.from(arrayLike, mapfn = undefined, thisArg = undefined)
+	  from: function from(arrayLike/*, mapfn = undefined, thisArg = undefined*/){
+	    var O       = toObject(arrayLike)
+	      , C       = typeof this == 'function' ? this : Array
+	      , $$      = arguments
+	      , $$len   = $$.length
+	      , mapfn   = $$len > 1 ? $$[1] : undefined
+	      , mapping = mapfn !== undefined
+	      , index   = 0
+	      , iterFn  = getIterFn(O)
+	      , length, result, step, iterator;
+	    if(mapping)mapfn = ctx(mapfn, $$len > 2 ? $$[2] : undefined, 2);
+	    // if object isn't iterable or it's array with default iterator - use simple case
+	    if(iterFn != undefined && !(C == Array && isArrayIter(iterFn))){
+	      for(iterator = iterFn.call(O), result = new C; !(step = iterator.next()).done; index++){
+	        result[index] = mapping ? call(iterator, mapfn, [step.value, index], true) : step.value;
+	      }
+	    } else {
+	      length = toLength(O.length);
+	      for(result = new C(length); length > index; index++){
+	        result[index] = mapping ? mapfn(O[index], index) : O[index];
+	      }
+	    }
+	    result.length = index;
+	    return result;
+	  }
+	});
+
+
+/***/ },
+/* 251 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -19037,15 +19134,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Events = __webpack_require__(135);
 	var BlockMixins = __webpack_require__(132);
 
-	var SimpleBlock = __webpack_require__(249);
+	var SimpleBlock = __webpack_require__(252);
 	var BlockReorder = __webpack_require__(241);
 	var BlockDeletion = __webpack_require__(242);
 	var BlockPositioner = __webpack_require__(238);
 	var EventBus = __webpack_require__(79);
 
-	var Spinner = __webpack_require__(255);
+	var Spinner = __webpack_require__(258);
 
-	var DELETE_TEMPLATE = __webpack_require__(256);
+	var DELETE_TEMPLATE = __webpack_require__(259);
 
 	var Block = function Block(data, instance_id, mediator, options) {
 	  SimpleBlock.apply(this, arguments);
@@ -19465,12 +19562,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	});
 
-	Block.extend = __webpack_require__(254); // Allow our Block to be extended.
+	Block.extend = __webpack_require__(257); // Allow our Block to be extended.
 
 	module.exports = Block;
 
 /***/ },
-/* 249 */
+/* 252 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -19484,7 +19581,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var BlockReorder = __webpack_require__(241);
 
-	var BLOCK_TEMPLATE = __webpack_require__(250);
+	var BLOCK_TEMPLATE = __webpack_require__(253);
 
 	var SimpleBlock = function SimpleBlock(data, instance_id, mediator, options) {
 	  this.createStore(data);
@@ -19610,26 +19707,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	SimpleBlock.fn = SimpleBlock.prototype;
 
 	// Allow our Block to be extended.
-	SimpleBlock.extend = __webpack_require__(254);
+	SimpleBlock.extend = __webpack_require__(257);
 
 	module.exports = SimpleBlock;
 
 /***/ },
-/* 250 */
+/* 253 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var BLOCK_ADDITION_TOP_TEMPLATE = __webpack_require__(251);
-	var BLOCK_ADDITION_TEMPLATE = __webpack_require__(252);
-	var BLOCK_REPLACER_TEMPLATE = __webpack_require__(253);
+	var BLOCK_ADDITION_TOP_TEMPLATE = __webpack_require__(254);
+	var BLOCK_ADDITION_TEMPLATE = __webpack_require__(255);
+	var BLOCK_REPLACER_TEMPLATE = __webpack_require__(256);
 
 	module.exports = function (editor_html) {
 	  return "\n    <div class='st-block__inner'>\n      " + editor_html + "\n    </div>\n    " + BLOCK_REPLACER_TEMPLATE() + "\n    " + BLOCK_ADDITION_TOP_TEMPLATE() + "\n    " + BLOCK_ADDITION_TEMPLATE() + "\n  ";
 	};
 
 /***/ },
-/* 251 */
+/* 254 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -19641,7 +19738,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 252 */
+/* 255 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -19653,7 +19750,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 253 */
+/* 256 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -19665,7 +19762,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 254 */
+/* 257 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -19720,7 +19817,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 255 */
+/* 258 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -20103,7 +20200,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 256 */
+/* 259 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -20111,7 +20208,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = '\n  <div class="st-block__ui-delete-controls">\n    <label class="st-block__delete-label">\n      ' + i18n.t('general:delete') + '\n    </label>\n    <button class=\'st-block-ui__confirm js-st-block-confirm-delete\' type="button">\n      ' + i18n.t('general:yes') + '\n    </button>\n    <button class=\'st-block-ui__confirm js-st-block-deny-delete\' type="button">\n      ' + i18n.t('general:no') + '\n    </button>\n  </div>\n';
 
 /***/ },
-/* 257 */
+/* 260 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -20183,12 +20280,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 258 */
+/* 261 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var _Array$from = __webpack_require__(259)['default'];
+	var _Array$from = __webpack_require__(248)['default'];
 
 	var selectionRange = __webpack_require__(234);
 
@@ -20343,62 +20440,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = ScribeTextBlockPlugin;
 
 /***/ },
-/* 259 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = { "default": __webpack_require__(260), __esModule: true };
-
-/***/ },
-/* 260 */
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(90);
-	__webpack_require__(261);
-	module.exports = __webpack_require__(7).Array.from;
-
-/***/ },
-/* 261 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var ctx         = __webpack_require__(8)
-	  , $export     = __webpack_require__(5)
-	  , toObject    = __webpack_require__(12)
-	  , call        = __webpack_require__(117)
-	  , isArrayIter = __webpack_require__(118)
-	  , toLength    = __webpack_require__(119)
-	  , getIterFn   = __webpack_require__(120);
-	$export($export.S + $export.F * !__webpack_require__(131)(function(iter){ Array.from(iter); }), 'Array', {
-	  // 22.1.2.1 Array.from(arrayLike, mapfn = undefined, thisArg = undefined)
-	  from: function from(arrayLike/*, mapfn = undefined, thisArg = undefined*/){
-	    var O       = toObject(arrayLike)
-	      , C       = typeof this == 'function' ? this : Array
-	      , $$      = arguments
-	      , $$len   = $$.length
-	      , mapfn   = $$len > 1 ? $$[1] : undefined
-	      , mapping = mapfn !== undefined
-	      , index   = 0
-	      , iterFn  = getIterFn(O)
-	      , length, result, step, iterator;
-	    if(mapping)mapfn = ctx(mapfn, $$len > 2 ? $$[2] : undefined, 2);
-	    // if object isn't iterable or it's array with default iterator - use simple case
-	    if(iterFn != undefined && !(C == Array && isArrayIter(iterFn))){
-	      for(iterator = iterFn.call(O), result = new C; !(step = iterator.next()).done; index++){
-	        result[index] = mapping ? call(iterator, mapfn, [step.value, index], true) : step.value;
-	      }
-	    } else {
-	      length = toLength(O.length);
-	      for(result = new C(length); length > index; index++){
-	        result[index] = mapping ? mapfn(O[index], index) : O[index];
-	      }
-	    }
-	    result.length = index;
-	    return result;
-	  }
-	});
-
-
-/***/ },
 /* 262 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -20409,7 +20450,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	paragraph that has been added.
 	*/
 
-	var _Array$from = __webpack_require__(259)['default'];
+	var _Array$from = __webpack_require__(248)['default'];
 
 	var scribePastePlugin = function scribePastePlugin(block) {
 	  return function (scribe) {
@@ -20530,8 +20571,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _ = __webpack_require__(38);
 
-	var Block = __webpack_require__(248);
-	var stToHTML = __webpack_require__(257);
+	var Block = __webpack_require__(251);
+	var stToHTML = __webpack_require__(260);
 	var ScribeHeadingPlugin = __webpack_require__(263);
 	var ScribeQuotePlugin = __webpack_require__(264);
 
@@ -20579,7 +20620,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	"use strict";
 
 	var Dom = __webpack_require__(73);
-	var Block = __webpack_require__(248);
+	var Block = __webpack_require__(251);
 
 	module.exports = Block.extend({
 
@@ -20633,10 +20674,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Heading Block
 	*/
 
-	var Block = __webpack_require__(248);
-	var stToHTML = __webpack_require__(257);
+	var Block = __webpack_require__(251);
+	var stToHTML = __webpack_require__(260);
 
-	var ScribeTextBlockPlugin = __webpack_require__(258);
+	var ScribeTextBlockPlugin = __webpack_require__(261);
 	var ScribeHeadingPlugin = __webpack_require__(263);
 	var ScribeQuotePlugin = __webpack_require__(264);
 
@@ -20696,8 +20737,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Object$keys = __webpack_require__(34)['default'];
 
-	var Block = __webpack_require__(248);
-	var stToHTML = __webpack_require__(257);
+	var Block = __webpack_require__(251);
+	var stToHTML = __webpack_require__(260);
 	var Dom = __webpack_require__(73);
 
 	var ScribeListBlockPlugin = __webpack_require__(269);
@@ -21020,7 +21061,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var utils = __webpack_require__(33);
 	var Dom = __webpack_require__(73);
 
-	var Block = __webpack_require__(248);
+	var Block = __webpack_require__(251);
 
 	var tweet_template = _.template(["<blockquote class='twitter-tweet' align='center'>", "<p><%= text %></p>", "&mdash; <%= user.name %> (@<%= user.screen_name %>)", "<a href='<%= status_url %>' data-datetime='<%= created_at %>'><%= created_at %></a>", "</blockquote>"].join("\n"));
 
@@ -21125,7 +21166,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _ = __webpack_require__(38);
 	var utils = __webpack_require__(33);
-	var Block = __webpack_require__(248);
+	var Block = __webpack_require__(251);
 
 	module.exports = Block.extend({
 
@@ -21287,6 +21328,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // We use mousedown rather than click as that allows us to keep focus on the contenteditable field.
 	    Events.delegate(this.el, '.st-format-btn', 'mousedown', this.onFormatButtonClick);
+	    Events.delegate(this.el, '.st-format-btn', 'click', function (e) {
+	      return e.preventDefault();
+	    });
 	  },
 
 	  hide: function hide() {
@@ -21951,7 +21995,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	"use strict";
 
-	var BLOCK_ADDITION_TEMPLATE = __webpack_require__(252);
+	var BLOCK_ADDITION_TEMPLATE = __webpack_require__(255);
 
 	module.exports = function () {
 	  return "\n    <div id=\"st_top\" class=\"st-top-controls\">\n      " + BLOCK_ADDITION_TEMPLATE() + "\n    </div>\n  ";
