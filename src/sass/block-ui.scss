@@ -55,15 +55,6 @@
     color:$error-color;
     opacity: 1;
   }
-
-  .st-block--textable &,
-  .st-block[data-type="list"] &,
-  .st-block {
-    display: none;
-  }
-  .st-block[data-type="quote"] & {
-    display: block;
-  }
 }
 
 .st-block-control-ui-btn {
